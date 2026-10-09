@@ -1,8 +1,9 @@
 # Python: 3.10
-# This project reproduces the CartPole PPO part of the Lux AI "RL with Lux: 1 - Intro to RL" tutorial
-# with the current Gymnasium/SB3 API and a clean RGB -> FFmpeg video pipeline.
-
+# Reproduces the CartPole PPO part of the Lux AI "RL with Lux: 1 - Intro to RL" tutorial
+# with the current Gymnasium/SB3 API and extends it to a PPO vs A2C research framework.
 gymnasium[classic-control]==1.4.0
 stable-baselines3[extra]==2.9.0
 imageio==2.38.0
 imageio-ffmpeg==0.6.0
+pandas>=2.0
+matplotlib>=3.7

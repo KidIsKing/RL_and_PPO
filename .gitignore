@@ -12,3 +12,11 @@ videos/*.webm
 videos/*.gif
 
 models/*.zip
+
+results/
+results_quick/
+analysis/
+analysis_quick/
+videos/
+logs/
+models/

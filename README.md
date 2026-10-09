@@ -1,110 +1,66 @@
-# Lux RL tutorial — local baseline
+# PPO vs A2C на CartPole: стабильность обучения и чувствительность к гиперпараметрам
 
-This is the first clean local stage of the project.
+Студенческое исследование. Код основан на учебнике Stone Tao «RL with Lux: 1 — Intro to RL»
+(часть CartPole + PPO), перенесён на современный Gymnasium / Stable-Baselines3 2.9.
 
-It follows the **CartPole + PPO** part of Stone Tao's
-**"RL with Lux: 1 - Intro to RL"** tutorial, but updates the old
-Gym/SB3 notebook code to the modern Gymnasium/SB3 API.
+## Установка (Python 3.10)
 
-The project deliberately does **not** introduce hyperparameter-search code yet.
+Windows PowerShell:
 
-## 1. Requirements
+    py -3.10 -m venv .venv
+    .\.venv\Scripts\Activate.ps1
+    python -m pip install --upgrade pip
+    pip install -r requirements.txt
 
-Use **Python 3.10**.
+macOS / Linux:
 
-Create and activate a virtual environment:
+    python3.10 -m venv .venv
+    source .venv/bin/activate
+    python -m pip install --upgrade pip
+    pip install -r requirements.txt
 
-### Windows PowerShell
+## Быстрый старт
 
-```powershell
-py -3.10 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
+    python -m src.main                  # демо: случайная политика -> обучение PPO -> видео (1-3 минуты)
+    python -m src.sweep --quick         # проверка всего конвейера: 20k шагов, 2 сида, 2 серии -> results_quick/
+    python -m src.analyze --results results_quick --out analysis_quick
 
-### macOS / Linux
+## Основной рабочий процесс
 
-```bash
-python3.10 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
+    python -m src.sweep --list                       # какие серии есть и сколько это запусков
+    python -m src.sweep                              # все серии PPO, 5 сидов (параллельно, 5 процессов)
+    python -m src.sweep --groups clip_range --seeds 10
+    python -m src.analyze                            # таблицы и графики -> analysis/
+    python -m src.render --run results/ppo/baseline/default/seed_0   # видео для выбранного запуска
+    python -m src.train --algo ppo --set learning_rate=0.001 --set clip_range=0.1 --video   # один запуск вручную
 
-Check the environment:
+Прерванный свип можно запустить заново: готовые запуски пропускаются.
 
-```bash
-python --version
-python -c "import gymnasium, stable_baselines3, imageio; print(gymnasium.__version__, stable_baselines3.__version__, imageio.__version__)"
-```
+## Структура
 
-## 2. Run
+    src/config.py       ExperimentConfig — один объект описывает запуск целиком
+    src/experiments.py  ЧТО запускаем: серии гиперпараметров PPO и заготовка для A2C
+    src/algos.py        реестр алгоритмов (ppo, a2c), запись фактических гиперпараметров
+    src/envs.py         создание сред
+    src/callbacks.py    оценка политики каждые N шагов -> кривая обучения + диагностика
+    src/train.py        run_experiment(cfg): обучение, сохранение результатов
+    src/sweep.py        параллельный запуск серий
+    src/analyze.py      метрики стабильности, графики, чувствительность параметров
+    src/video.py        запись видео с подписями (mp4 / gif / webm)
+    src/render.py       видео для уже обученной модели
+    src/main.py         демо
 
-From the project root:
+## Что сохраняется для каждого запуска
 
-```bash
-python -m src.main
-```
+    results/<algo>/<серия>/<конфигурация>/seed_<k>/
+        config.json   конфиг + фактические гиперпараметры + версии библиотек
+        eval.csv      кривая обучения (награда, диагностика: approx_kl, clip_fraction, ...)
+        summary.json  итоговая оценка и время обучения
+        model.zip     обученная модель
 
-The script will:
+## Для сокомандника (A2C)
 
-1. run a random policy and save a short replay;
-2. train PPO for 10,000 environment interactions;
-3. run the deterministic trained policy;
-4. save the same frames as:
-   - `videos/*.mp4`
-   - `videos/*.webm`
-   - `videos/*.gif`
-
-The MP4 and WebM files are the preferred formats for normal playback.
-GIF is convenient for quick inspection.
-
-## 3. What is intentionally different from the old notebook?
-
-The original tutorial uses:
-
-- Python 3.7
-- `gym==0.21`
-- `stable-baselines3==1.7.0`
-- OpenCV `VideoWriter` with a `VP80` WebM codec tag
-- old four-value `env.step(...)` API
-
-The local version uses:
-
-- Python 3.10
-- Gymnasium
-- current SB3 2.9.0
-- the modern five-value `env.step(...)` API
-- RGB frames passed directly to imageio/FFmpeg
-- H.264 MP4 and VP9 WebM writers
-
-This is intentional: the goal is to reproduce the **experiment and visualization**, not preserve outdated dependency hacks.
-
-## 4. Project stage
-
-At this stage there is only one learning setup:
-
-```text
-CartPole-v1
-    ↓
-PPO + MlpPolicy
-    ↓
-10,000 training timesteps
-    ↓
-deterministic evaluation
-    ↓
-RGB frames
-    ↓
-MP4 / WebM / GIF
-```
-
-The next stage can turn this into a research project for A2C vs PPO with:
-
-- a central experiment configuration;
-- explicit common and algorithm-specific parameters;
-- controlled seeds;
-- repeatable experiment IDs;
-- TensorBoard/CSV results;
-- evaluation metrics;
-- automated comparison plots.
+1. Открой `src/experiments.py`, раздел `A2C_SWEEPS`: подбери значения и дополни серии.
+2. Запуск: `python -m src.sweep --algo a2c`
+3. Всё остальное (обучение, оценка, графики) уже общее для PPO и A2C: код не менять.
+   Названия серий лучше оставить такими же, как у PPO, — тогда результаты сравнимы.
