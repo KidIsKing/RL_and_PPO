@@ -48,16 +48,27 @@ class EvalLogger(BaseCallback):
             self._evaluate()
 
     def _evaluate(self) -> None:
-        mean, std = evaluate_policy(
+        # Две оценки на одну контрольную точку:
+        #   sampled — действия СЭМПЛИРУЮТСЯ из распределения политики. Это ровно та политика, которую оптимизирует
+        #             PPO/A2C. Именно её используем для сравнения: до обучения она честно даёт ~20, а не «повезло/нет».
+        #   greedy  — берём самое вероятное действие (argmax). Нужна для видео и итоговых цифр «как работает агент».
+        #             Внимание: у необученной сети со случайными весами greedy-политика иногда СЛУЧАЙНО держит шест
+        #             все 500 шагов (зависит от сида), поэтому для кривых обучения она не годится.
+        mean_s, std_s = evaluate_policy(
+            self.model, self.eval_env, n_eval_episodes=self.n_eval_episodes, deterministic=False
+        )
+        mean_g, std_g = evaluate_policy(
             self.model, self.eval_env, n_eval_episodes=self.n_eval_episodes, deterministic=True
         )
-        buffer = self.model.ep_info_buffer  # последние эпизоды ОБУЧЕНИЯ (с шумом исследования)
+        buffer = self.model.ep_info_buffer  # последние эпизоды ОБУЧЕНИЯ
         train_return = float(np.mean([ep["r"] for ep in buffer])) if len(buffer) else np.nan
 
         row = {
             "timesteps": int(self.num_timesteps),
-            "eval_mean": float(mean),
-            "eval_std": float(std),
+            "eval_sampled_mean": float(mean_s),
+            "eval_sampled_std": float(std_s),
+            "eval_greedy_mean": float(mean_g),
+            "eval_greedy_std": float(std_g),
             "train_return_mean": train_return,
             "wall_time_sec": time.time() - self._t0,
         }

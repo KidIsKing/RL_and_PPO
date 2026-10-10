@@ -40,8 +40,12 @@ def run_experiment(
 ) -> dict[str, Any]:
     run_dir = cfg.run_dir(results_root)
     summary_path = run_dir / "summary.json"
-    if summary_path.exists() and not force:  # уже посчитано — пропускаем (можно перезапускать свип)
-        return json.loads(summary_path.read_text(encoding="utf-8"))
+    config_path = run_dir / "config.json"
+    if summary_path.exists() and config_path.exists() and not force:
+        stored = json.loads(config_path.read_text(encoding="utf-8")).get("config")
+        if stored == json.loads(json.dumps(cfg.to_dict())):  # тот же конфиг -> уже посчитано, пропускаем
+            return json.loads(summary_path.read_text(encoding="utf-8"))
+        # конфиг изменился (например, другой бюджет шагов) -> пересчитываем, а не берём устаревший результат
 
     run_dir.mkdir(parents=True, exist_ok=True)
     torch.set_num_threads(1)  # для маленькой сети 1 поток на процесс быстрее и позволяет гонять запуски параллельно
@@ -83,14 +87,19 @@ def run_experiment(
     final_mean, final_std = evaluate_policy(
         model, final_env, n_eval_episodes=cfg.final_eval_episodes, deterministic=True
     )
+    sampled_mean, sampled_std = evaluate_policy(
+        model, final_env, n_eval_episodes=cfg.final_eval_episodes, deterministic=False
+    )
     summary = {
         "algo": cfg.algo,
         "group": cfg.group,
         "name": cfg.name,
         "seed": cfg.seed,
         "timesteps_done": int(model.num_timesteps),
-        "final_eval_mean": float(final_mean),
+        "final_eval_mean": float(final_mean),          # greedy (argmax), как в видео
         "final_eval_std": float(final_std),
+        "final_eval_sampled_mean": float(sampled_mean),  # сэмплирование, как в кривых обучения
+        "final_eval_sampled_std": float(sampled_std),
         "train_time_sec": round(train_time, 1),
     }
     summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
