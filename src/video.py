@@ -139,3 +139,60 @@ def record_episodes(
                 writer.append(held)
     env.close()
     return list(writer.paths)
+
+
+def record_side_by_side(
+    models: list,
+    labels: list[str],
+    env_id: str,
+    base_path: str | Path,
+    n_episodes: int = 1,
+    seed: int = 0,
+    fps: int = 30,
+    formats: Iterable[str] = (".mp4", ".gif"),
+) -> list[Path]:
+    """Несколько политик рядом в одном кадре (слева направо). model=None -> случайные действия.
+
+    Все среды стартуют с ОДИНАКОВОГО состояния (один сид), поэтому различие в поведении — заслуга политики.
+    Когда эпизод одной панели закончился, её кадр замирает с пометкой, остальные доигрывают.
+    """
+    n = len(models)
+    envs = [make_render_env(env_id) for _ in range(n)]
+    for env, model in zip(envs, models):
+        if model is None:
+            env.action_space.seed(seed)
+
+    with MultiFormatWriter(base_path, formats=formats, fps=fps) as writer:
+        for episode in range(n_episodes):
+            obs = [env.reset(seed=seed + episode)[0] for env in envs]
+            alive = [True] * n
+            totals, steps = [0.0] * n, [0] * n
+            status = [""] * n
+            last = [env.render() for env in envs]
+            while any(alive):
+                panels = []
+                for i, env in enumerate(envs):
+                    if alive[i]:
+                        if models[i] is None:
+                            action = env.action_space.sample()
+                        else:
+                            action, _ = models[i].predict(obs[i], deterministic=True)
+                            action = int(action)
+                        obs[i], reward, terminated, truncated, _ = env.step(action)
+                        totals[i] += float(reward)
+                        steps[i] += 1
+                        last[i] = env.render()
+                        if terminated or truncated:
+                            alive[i] = False
+                            status[i] = "TIME LIMIT REACHED (success)" if truncated else "POLE FELL"
+                    lines = [labels[i], f"episode {episode + 1}/{n_episodes}   step {steps[i]}", f"return {totals[i]:.0f}"]
+                    if status[i]:
+                        lines.append(status[i])
+                    panels.append(annotate(last[i], lines))
+                frame = np.concatenate(panels, axis=1)
+                writer.append(frame)
+            for _ in range(fps):  # удерживаем итоговый кадр ~1 секунду
+                writer.append(frame)
+    for env in envs:
+        env.close()
+    return list(writer.paths)
