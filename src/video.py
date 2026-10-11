@@ -105,8 +105,12 @@ def record_episodes(
     seed: int = 0,
     fps: int = 30,
     formats: Iterable[str] = (".mp4", ".gif"),
+    deterministic: bool = True,
 ) -> list[Path]:
     """Записывает n_episodes ПОЛНЫХ эпизодов. model=None -> случайные действия.
+
+    deterministic=True  — «жадная» политика (самое вероятное действие);
+    deterministic=False — действия сэмплируются, как в кривых обучения на графиках.
 
     На кадре: подпись (label), номер эпизода, шаг и накопленная награда.
     После конца эпизода последний кадр удерживается ~1 секунду с пометкой, чем он закончился.
@@ -123,7 +127,7 @@ def record_episodes(
                 if model is None:
                     action = env.action_space.sample()
                 else:
-                    action, _ = model.predict(obs, deterministic=True)
+                    action, _ = model.predict(obs, deterministic=deterministic)
                     action = int(action)
                 obs, reward, terminated, truncated, _ = env.step(action)
                 total += float(reward)
@@ -150,6 +154,7 @@ def record_side_by_side(
     seed: int = 0,
     fps: int = 30,
     formats: Iterable[str] = (".mp4", ".gif"),
+    deterministic: bool = True,
 ) -> list[Path]:
     """Несколько политик рядом в одном кадре (слева направо). model=None -> случайные действия.
 
@@ -176,7 +181,7 @@ def record_side_by_side(
                         if models[i] is None:
                             action = env.action_space.sample()
                         else:
-                            action, _ = models[i].predict(obs[i], deterministic=True)
+                            action, _ = models[i].predict(obs[i], deterministic=deterministic)
                             action = int(action)
                         obs[i], reward, terminated, truncated, _ = env.step(action)
                         totals[i] += float(reward)

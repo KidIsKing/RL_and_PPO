@@ -93,7 +93,15 @@ Python 3.10.11.
     # плохой и хороший гиперпараметр бок о бок
     python -m src.render --compare results/ppo/learning_rate/learning_rate=1e-05/seed_0 results/ppo/learning_rate/learning_rate=0.01/seed_0
 
-Видео сохраняются в `videos/` (сравнения) или в папку запуска (одиночные).
+    # то же, но с СЭМПЛИРОВАНИЕМ действий (как на графиках) — рекомендуется для сравнения с графиками
+    python -m src.render --compare results/ppo/learning_rate/learning_rate=1e-05/seed_0 results/ppo/learning_rate/learning_rate=0.0003/seed_0 results/ppo/learning_rate/learning_rate=0.01/seed_0 --sampled
+
+    # видео-сравнения по ВСЕМ гиперпараметрам (от минимума к максимуму) одной командой
+    bash make_compare_videos.sh          # сид 0
+    bash make_compare_videos.sh 3        # другой сид
+
+Видео сохраняются в `videos/` (сравнения) или в папку запуска (одиночные). Без `--sampled` агент играет «жадно»
+(самое вероятное действие) и выглядит лучше, чем на графиках: слабая нестабильность в таком видео не видна.
 
 ### Шаг 6. Расширенный эксперимент на главных параметрах
 
@@ -168,7 +176,8 @@ PowerShell:
 | `--run ПАПКА_ЗАПУСКА` | видео одной модели |
 | `--random` | видео случайной политики |
 | `--compare A B [C D]` | 2–4 запуска бок о бок (`random` = случайная политика) |
-| `--episodes N` | число эпизодов (по умолчанию 3) |
+| `--episodes N` | число эпизодов (по умолчанию 3, для `--compare` не больше 3) |
+| `--sampled` | сэмплировать действия (как на графиках) вместо жадной политики; файлы получают суффикс `_sampled` |
 
 ### `python -m src.main` — демо (без флагов)
 

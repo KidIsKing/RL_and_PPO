@@ -347,7 +347,7 @@ def plot_sensitivity(table: pd.DataFrame, configs: pd.DataFrame, algo: str, out_
     if base is not None and base["n_seeds"] > 1:
         noise = 2 * base["auc_std"]
         ax.axvline(noise, linestyle="--", color="tab:red")
-        ax.text(noise, len(t) - 0.4, " уровень шума сидов\n (2×std дефолта)", color="tab:red", fontsize=8, va="top")
+        ax.text(noise, 0.15, " уровень шума сидов\n (2×std дефолта)", color="tab:red", fontsize=8, va="center")
     ax.set_xlabel("чувствительность = max − min средней AUC по значениям параметра")
     ax.set_title(f"{algo.upper()}: насколько сильно параметр влияет на обучение\n(столбик короче красной линии ≈ эффект неотличим от шума)")
     _save(fig, out_dir / f"{algo}_sensitivity.png")
