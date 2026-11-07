@@ -19,7 +19,6 @@ numpy==2.2.6
 packaging==26.3
 pandas==2.3.3
 pillow==12.3.0
-pip==23.0.1
 pluggy==1.7.0
 Pygments==2.21.0
 pyparsing==3.3.3

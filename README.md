@@ -26,16 +26,21 @@ PPO-сторона проекта на **том же протоколе**, чт�
 Версии входят в условия сопоставимости: при другой версии план откажется запускаться, а результаты не попали бы
 в одну группу анализа с A2C.
 
+Нужен интерпретатор именно 3.10.22; дальше работайте в обычном `venv`, без активации conda.
+Если такого Python нет, один раз создайте его (`conda create -n ppo python=3.10.22`) и используйте только как источник
+интерпретатора. Git Bash на Windows (путь вида `/c/Users/<имя>/.conda/envs/ppo/python.exe`):
+
 ```
-conda create -n ppo python=3.10.22
-conda activate ppo
-pip install -r requirements-frozen.txt
-pip install --no-deps --no-build-isolation -e ".[dev,video]"
+/c/Users/<имя>/.conda/envs/ppo/python.exe -m venv .venv
+source .venv/Scripts/activate          # PowerShell: .venv\Scripts\Activate.ps1
+python --version                       # должно быть 3.10.22
+python -m pip install -r requirements-frozen.txt
+python -m pip install --no-deps --no-build-isolation -e ".[dev,video]"
 python -m ppo_tools.doctor
 ```
 
-`doctor` покажет, что именно не совпало, и как исправить. Если torch у вас вида `2.10.0+cu128`, поставьте
-CPU-сборку `2.10.0`. Держите путь к проекту коротким (Windows).
+Если установка оборвалась, ничего не работает: проверьте `python -m pip list`. `doctor` покажет, что именно не
+совпало. Если torch вида `2.10.0+cu128`, поставьте CPU-сборку `2.10.0`. Держите путь к проекту коротким.
 
 ## 2. Запуск
 
