@@ -1,0 +1,22 @@
+{
+  "source": "akogarechau/A2C_RL @ 913e4cb (identical to RATARETO/A2CvsPPO a2c @ d95b8d6 in src/)",
+  "files": {
+    "__init__.py": "65e9931c622adaf12d2b46ac65b900074e353689a7f8d469d04d3c085c764ad4",
+    "analyze.py": "294aaaf466f209f3eaaeabbea01643637c8ab4fabcf4410c47375e76bc619918",
+    "compatibility.json": "1d479e8b71d7767ef3c290ae50f6248f7a0f6b5927bfbd6cbe03b46b77c1e4c6",
+    "config.py": "ccd065e8521392f0f639de0a3a6c88f2e5a7c0a2f4c6f39dfb35c39d01b174f7",
+    "design.py": "fa59807c77430ed03a5256125f03baef984c25b798b451146a1a835ce7e73167",
+    "envs.py": "6d12178c5593a4ad363c3f57ac5a30208d5bb0cd0e39ca26fbe0721bd64db3a3",
+    "evaluation.py": "e7cf9e53bba9659d9778e1686d990c3f3ef91ee01fb02ba3a805ba8d633f5535",
+    "experiments.py": "4f21c54abec7615e483c29d621eb018c8e82aa0c8e034c89eb7ad0556e690f9b",
+    "grids.py": "5aeb2bd962ef43f138c71a623e0d50ba0995e99a76bda7676446e444ffd0c693",
+    "io.py": "29b8d666d10164c85ed78e7caea3440d874d207d4e715e616a797dd115939f1e",
+    "metrics.py": "93e296b3aa4bc0b3c0df8eb9ffcc347b33b2d205f07186602e027f885592dd32",
+    "pilot.py": "b6c7d6f6114f554ec8a068f45bfba4ff8b39ba3019b2e4cf14b56c633fda1c3a",
+    "plotting.py": "a73f947e3891e8fb0a7f7bf1cd2cd2104577436035a6123a940fdfa4024ebded",
+    "results.py": "2f87e7605e41acf90111263681f7109b9a1a0d58d359d78318e79414d0b814d1",
+    "study.py": "c307ed0dcc209cc4e5e8d2be19cd7a530d7a5e10e192f24cb126465354d1997c",
+    "sweep.py": "3f7164b3cefc326258bc159ea05d6f2257b0edc5ece1c5a8ac75187ef9a95a0a",
+    "train.py": "a0c319ad8630622660ce7cc8b89cbc70e00abd4365d91b99060fbeac63cdf905"
+  }
+}
