@@ -164,7 +164,7 @@ def test_core_check_ignores_crlf_line_endings(tmp_path):
     shutil.copytree(doctor.CORE_DIR, core, ignore=shutil.ignore_patterns("__pycache__"))
     for path in core.iterdir():
         if path.is_file():
-            path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
+                        path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n").replace(b"\n", b"\r\n"))
     assert doctor.core_manifest_problems(core, doctor.MANIFEST) == []
 
 
