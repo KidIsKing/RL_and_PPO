@@ -28,9 +28,21 @@ PPO-сторона проекта на **том же протоколе**, чт�
 
 Работайте в обычном `venv`. Нужен только интерпретатор 3.10.22; выберите один вариант.
 
-**Вариант A (рекомендуется): интерпретатор из уже созданного окружения conda.**
-Если когда-то выполнено `conda create -n ppo python=3.10.22`, файл уже на диске. Conda активировать не нужно.
-Git Bash (подставьте своё имя пользователя):
+**Интерпретатор 3.10.22 из окружения conda, дальше обычный `venv`.**
+Conda нужна только один раз, чтобы получить интерпретатор 3.10.22. Дальше работаем в `venv`, активировать conda
+(`conda activate`) не нужно.
+
+*Шаг A1. Создать окружение conda с Python 3.10.22 (один раз; если оно уже создано, пропустите):*
+
+```
+conda create -n ppo python=3.10.22
+conda env list                          # в строке ppo будет путь, например C:\Users\<имя>\.conda\envs\ppo
+```
+
+Если команда `conda` не найдена, откройте «Anaconda Prompt» из меню «Пуск» и выполните её там.
+
+*Шаг A2. Создать `venv` из этого интерпретатора и поставить зависимости.*
+Git Bash (подставьте своё имя пользователя; путь из `conda env list`, с `/c/` вместо `C:\` и прямыми слэшами):
 
 ```
 /c/Users/<имя>/.conda/envs/ppo/python.exe -m venv .venv
@@ -42,36 +54,8 @@ python -m pip install --no-deps --no-build-isolation -e .
 python -m ppo_tools.doctor
 ```
 
-**Вариант B: без conda, через uv** (не гарантирую, что 3.10.22 там есть):
-
-```
-python -m pip install uv
-uv python list --all-versions | grep 3.10.22    # если пусто — вариант B не подходит
-uv python install 3.10.22
-uv venv --python 3.10.22 .venv
-source .venv/Scripts/activate
-python -m pip install -r requirements-frozen.txt
-python -m pip install -r requirements-video.txt
-python -m pip install --no-deps --no-build-isolation -e .
-python -m ppo_tools.doctor
-```
-
-**Вариант C: только если 3.10.22 недоступен (например, 3.10.11).** Проект работает, но план нужно заморозить заново
-под ваши версии (библиотеки всё равно точно по `requirements-frozen.txt`). `doctor` по основному плану покажет
-расхождение по Python, это ожидаемо:
-
-```
-python -m a2c_research.study --prepare configs/ppo_local_v1.json --suite core --algos ppo
-python -m ppo_tools.doctor --plan configs/ppo_local_v1.json
-python -m a2c_research.study --plan configs/ppo_local_v1.json --workers 5
-```
-
-Ограничение: запуски окажутся в другой группе анализа, чем A2C сокомандника на 3.10.22. Инструмент не сопоставит
-их напрямую. Этот вариант на Windows не проверялся.
-
-`--no-deps` не ставит дополнительные зависимости, поэтому видео-пакеты идут отдельным файлом. Если torch вида
-`2.10.0+cu128`, поставьте CPU-сборку `2.10.0`. Если установка оборвалась, проверьте `python -m pip list`. Держите
-путь к проекту коротким.
+PowerShell: первая строка вместо Git Bash-пути: `C:\Users\<имя>\.conda\envs\ppo\python.exe -m venv .venv`.
+При следующих запусках достаточно активировать `.venv` (строка `source .venv/Scripts/activate`).
 
 ## 2. Запуск
 
