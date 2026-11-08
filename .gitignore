@@ -15,3 +15,5 @@ analysis*/
 .coverage
 htmlcov/
 videos/
+A2C_RL/
+A2CvsPPO/

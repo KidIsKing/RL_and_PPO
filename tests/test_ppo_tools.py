@@ -10,9 +10,16 @@ import pytest
 from a2c_research.config import environment_config, make_config
 from a2c_research.train import run_experiment
 from ppo_tools import batch_videos, doctor, subset
-from ppo_tools.video import load_run, record_panels
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def video_api():
+    """Видео-зависимости необязательны (requirements-video.txt): без них эти тесты пропускаются."""
+    pytest.importorskip("imageio")
+    pytest.importorskip("pygame")
+    from ppo_tools import video
+    return video
 
 
 # ---------------------------------------------------------------- doctor
@@ -128,12 +135,13 @@ def final_returns(run_dir: Path, policy: str) -> list[float]:
 @pytest.mark.parametrize("env_id", ["CartPole-v1", "Acrobot-v1", "Pendulum-v1"])
 @pytest.mark.parametrize("deterministic", [False, True])
 def test_video_episodes_reproduce_final_evaluation_returns(tmp_path, env_id, deterministic):
+    video = video_api()
     cfg = tiny(env_id)
     run_experiment(cfg, tmp_path / "results")
     run_dir = cfg.run_dir(tmp_path / "results")
-    run = load_run(run_dir)
+    run = video.load_run(run_dir)
     assert run.env_id == env_id
-    paths, results = record_panels([run, run], env_id, tmp_path / "v" / "clip", episodes=2,
+    paths, results = video.record_panels([run, run], env_id, tmp_path / "v" / "clip", episodes=2,
                                    deterministic=deterministic, formats=(".gif",))
     expected = final_returns(run_dir, "greedy" if deterministic else "sampled")
     assert [r for r, _ in results[0]] == pytest.approx(expected)
@@ -142,8 +150,53 @@ def test_video_episodes_reproduce_final_evaluation_returns(tmp_path, env_id, det
 
 
 def test_random_policy_and_mp4_output(tmp_path):
-    random_run = load_run("random")
-    paths, results = record_panels([random_run], "CartPole-v1", tmp_path / "rnd", episodes=1,
+    video = video_api()
+    random_run = video.load_run("random")
+    paths, results = video.record_panels([random_run], "CartPole-v1", tmp_path / "rnd", episodes=1,
                                    seed_start=5, formats=(".mp4",))
     assert paths[0].suffix == ".mp4" and paths[0].stat().st_size > 0
     assert results[0][0][1] >= 1
+
+
+# ---------------------------------------------------------------- устойчивость к Windows и понятные подсказки
+def test_core_check_ignores_crlf_line_endings(tmp_path):
+    core = tmp_path / "core"
+    shutil.copytree(doctor.CORE_DIR, core, ignore=shutil.ignore_patterns("__pycache__"))
+    for path in core.iterdir():
+        if path.is_file():
+            path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
+    assert doctor.core_manifest_problems(core, doctor.MANIFEST) == []
+
+
+def test_layout_notes_flag_stray_folders(tmp_path):
+    for name in ("configs/x", "src", "tests", "A2C_RL", "my_tmp", "results_quick", "analysis_ppo"):
+        (tmp_path / name).mkdir(parents=True)
+    (tmp_path / "CORE_MANIFEST.json").write_text("{}", encoding="utf-8")
+    text = " ".join(doctor.layout_notes(tmp_path))
+    assert "A2C_RL: клон" in text and "my_tmp" in text and "results_quick" in text
+    assert "analysis_ppo" not in text
+    assert "configs/main_search_v1.json: ожидаемый" in text
+
+
+def test_subset_explains_missing_runs_and_resolves_repo_root(tmp_path):
+    empty = tmp_path / "A2C_RL" / "results_search"
+    empty.mkdir(parents=True)
+    (empty / "report.md").write_text("x", encoding="utf-8")
+    assert "нет ни одного config.json" in subset.diagnose_empty(empty, {"a2c"})
+    repo = tmp_path / "A2CvsPPO"
+    fake_run(repo / "results_search", "CartPole-v1", "a2c", "baseline", "default", 0)
+    assert subset.resolve_source(repo) == repo / "results_search"
+    assert len(subset.select_runs(subset.resolve_source(repo), {"a2c"})) == 1
+    assert "ни один не относится" in subset.diagnose_empty(subset.resolve_source(repo), {"ppo"})
+
+
+def test_subset_link_falls_back_to_copy_when_hard_links_impossible(tmp_path, monkeypatch):
+    src = tmp_path / "src"
+    fake_run(src, "CartPole-v1", "a2c", "baseline", "default", 0)
+
+    def refuse(*_):
+        raise OSError("cross-device link")
+    monkeypatch.setattr(subset.os, "link", refuse)
+    runs = subset.select_runs(src, {"a2c"})
+    assert subset.copy_runs(src, tmp_path / "dst", runs, link=True) == 1
+    assert list((tmp_path / "dst").rglob("eval.csv"))

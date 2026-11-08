@@ -1,0 +1,5 @@
+# Необязательно: только для ppo_tools.render и ppo_tools.batch_videos.
+# Ставится ПОСЛЕ requirements-frozen.txt:  python -m pip install -r requirements-video.txt
+imageio==2.38.0
+imageio-ffmpeg==0.6.0
+pygame-ce==2.5.8

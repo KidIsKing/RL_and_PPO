@@ -45,8 +45,17 @@ def version_problems(wanted: dict, actual: dict) -> list[str]:
     return problems
 
 
+def _digest(path: Path) -> str:
+    """SHA-256 содержимого без учёта окончаний строк: Git на Windows превращает LF в CRLF."""
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+
+
 def core_manifest_problems(core_dir: Path = CORE_DIR, manifest: Path = MANIFEST) -> list[str]:
-    """Файлы ядра должны байт-в-байт совпадать с версией сокомандника (иначе протокол «уплыл»)."""
+    """Содержимое файлов ядра должно совпадать с версией сокомандника (иначе протокол «уплыл»).
+
+    Различия только в окончаниях строк (CRLF/LF) не считаются изменением: на хеш кода обучения
+    (training_sha256, по AST) они не влияют.
+    """
     if not manifest.exists():
         return [f"нет файла {manifest.name}: нечем подтвердить, что ядро не изменено"]
     expected = json.loads(manifest.read_text(encoding="utf-8"))["files"]
@@ -55,11 +64,41 @@ def core_manifest_problems(core_dir: Path = CORE_DIR, manifest: Path = MANIFEST)
         path = core_dir / name
         if not path.exists():
             problems.append(f"{name}: файл ядра отсутствует")
-        elif hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+        elif _digest(path) != digest:
             problems.append(f"{name}: изменён относительно версии сокомандника")
     extra = {p.name for p in core_dir.glob("*.py")} - set(expected)
     problems += [f"{name}: лишний файл в ядре" for name in sorted(extra)]
     return problems
+
+
+EXPECTED_TOP = {
+    ".git", ".gitattributes", ".gitignore", ".venv", ".pytest_cache", ".ruff_cache", "CORE_MANIFEST.json",
+    "README.md", "pyproject.toml", "requirements-frozen.txt", "requirements-video.txt", "configs", "src",
+    "tests", "docs", "videos", "results_search",
+}
+HINTS = {
+    "A2C_RL": "клон репозитория сокомандника внутри проекта не нужен; уберите его за пределы проекта "
+              "(там нет готовых запусков, они в ветке a2c репозитория RATARETO/A2CvsPPO)",
+    "A2CvsPPO": "клон чужих результатов лучше держать рядом с проектом, а не внутри него",
+    "results_quick": "результаты пробного --quick; для статьи не нужны, можно удалить",
+}
+
+
+def layout_notes(root: Path = ROOT) -> list[str]:
+    """Что лежит в корне проекта сверх ожидаемого (не ошибка, только замечания)."""
+    notes = []
+    for entry in sorted(root.iterdir(), key=lambda e: e.name.lower()):
+        name = entry.name
+        if name in EXPECTED_TOP or name.startswith(("results_", "analysis_")) or name == "analysis":
+            if name in HINTS:
+                notes.append(f"{name}: {HINTS[name]}")
+            continue
+        notes.append(f"{name}: {HINTS.get(name, 'не входит в состав проекта; если не создавали намеренно, уберите')}")
+    for needed in ("configs/main_search_v1.json", "configs/ppo_cartpole_all_v1.json", "src/a2c_research",
+                   "src/ppo_tools", "tests", "CORE_MANIFEST.json"):
+        if not (root / needed).exists():
+            notes.append(f"{needed}: ожидаемый файл или папка отсутствует")
+    return notes
 
 
 def report(title: str, problems: list[str]) -> bool:
@@ -100,6 +139,10 @@ def main(argv: list[str] | None = None) -> int:
             ok &= report(f"план читается: {len(configs)} позиций запусков", [])
         except Exception as error:
             ok &= report("план читается", [str(error)])
+    notes = layout_notes()
+    print(f"[{'OK' if not notes else 'ЗАМЕЧАНИЯ'}] структура проекта")
+    for text in notes:
+        print(f"    - {text}")
     cpus = os.cpu_count() or 1
     print(f"\nПроцессоров: {cpus}. Для --workers обычно берут не больше (число ядер − 1); "
           f"один процесс обучения использует один поток PyTorch.")

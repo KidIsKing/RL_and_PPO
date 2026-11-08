@@ -26,10 +26,10 @@ PPO-сторона проекта на **том же протоколе**, чт�
 Версии (включая патч Python) входят в условия сопоставимости: при другой версии замороженный план откажется
 запускаться, а результаты не попали бы в одну группу анализа с A2C.
 
-Работайте в обычном `venv`. Нужен только интерпретатор 3.10.22, откуда он берётся — выберите один вариант.
+Работайте в обычном `venv`. Нужен только интерпретатор 3.10.22; выберите один вариант.
 
 **Вариант A (рекомендуется): интерпретатор из уже созданного окружения conda.**
-Если когда-то выполнено `conda create -n ppo python=3.10.22`, файл уже лежит на диске. Conda активировать не нужно.
+Если когда-то выполнено `conda create -n ppo python=3.10.22`, файл уже на диске. Conda активировать не нужно.
 Git Bash (подставьте своё имя пользователя):
 
 ```
@@ -37,7 +37,8 @@ Git Bash (подставьте своё имя пользователя):
 source .venv/Scripts/activate          # PowerShell: .venv\Scripts\Activate.ps1
 python --version                       # должно быть 3.10.22
 python -m pip install -r requirements-frozen.txt
-python -m pip install --no-deps --no-build-isolation -e ".[dev,video]"
+python -m pip install -r requirements-video.txt       # только для видео; без него остальное работает
+python -m pip install --no-deps --no-build-isolation -e .
 python -m ppo_tools.doctor
 ```
 
@@ -50,13 +51,14 @@ uv python install 3.10.22
 uv venv --python 3.10.22 .venv
 source .venv/Scripts/activate
 python -m pip install -r requirements-frozen.txt
-python -m pip install --no-deps --no-build-isolation -e ".[dev,video]"
+python -m pip install -r requirements-video.txt
+python -m pip install --no-deps --no-build-isolation -e .
 python -m ppo_tools.doctor
 ```
 
-**Вариант C: только если 3.10.22 недоступен (например, у вас 3.10.11).**
-Проект работает, но план нужно заморозить заново под ваши версии. Библиотеки всё равно ставьте точно по
-`requirements-frozen.txt`. `doctor` по основному плану покажет расхождение по Python, это ожидаемо:
+**Вариант C: только если 3.10.22 недоступен (например, 3.10.11).** Проект работает, но план нужно заморозить заново
+под ваши версии (библиотеки всё равно точно по `requirements-frozen.txt`). `doctor` по основному плану покажет
+расхождение по Python, это ожидаемо:
 
 ```
 python -m a2c_research.study --prepare configs/ppo_local_v1.json --suite core --algos ppo
@@ -64,13 +66,12 @@ python -m ppo_tools.doctor --plan configs/ppo_local_v1.json
 python -m a2c_research.study --plan configs/ppo_local_v1.json --workers 5
 ```
 
-Для дополнительных серий CartPole: `--prepare configs/ppo_local_cartpole_all.json --suite all --envs CartPole-v1 --algos ppo`.
-Ограничение: ваши запуски окажутся в другой группе анализа, чем A2C сокомандника на 3.10.22. Инструмент не
-сопоставит их напрямую. Нужно, чтобы он перезапустил A2C на той же версии Python, либо сравнивать таблицы вручную
-с этой оговоркой. Этот вариант на Windows не проверялся.
+Ограничение: запуски окажутся в другой группе анализа, чем A2C сокомандника на 3.10.22. Инструмент не сопоставит
+их напрямую. Этот вариант на Windows не проверялся.
 
-Если torch вида `2.10.0+cu128`, поставьте CPU-сборку `2.10.0`. Если установка оборвалась, проверьте
-`python -m pip list`: ничего не работает, пока не поставлены numpy и torch. Держите путь к проекту коротким.
+`--no-deps` не ставит дополнительные зависимости, поэтому видео-пакеты идут отдельным файлом. Если torch вида
+`2.10.0+cu128`, поставьте CPU-сборку `2.10.0`. Если установка оборвалась, проверьте `python -m pip list`. Держите
+путь к проекту коротким.
 
 ## 2. Запуск
 
@@ -82,8 +83,8 @@ python -m a2c_research.study --plan configs/main_search_v1.json --algos ppo --li
 python -m a2c_research.study --plan configs/main_search_v1.json --algos ppo --workers 5
 ```
 
-- Основное ядро PPO: 810 запусков. По логам сокомандника ≈ 38 CPU-часов (оценка, не замер на вашем ПК); при 5
-  процессах порядка 8 часов и больше. Можно частями: `--envs CartPole-v1`, `--groups learning_rate`, `--seeds 0 1`.
+- Основное ядро PPO: 810 запусков. По логам сокомандника ≈ 38 CPU-часов (оценка); при 5 процессах порядка 8 часов
+  и больше. Можно частями: `--envs CartPole-v1`, `--groups learning_rate`, `--seeds 0 1`.
 - Прервали? Запустите ту же команду: завершённые запуски проверяются и пропускаются. Если остался файл `.running`
   и процессов точно нет, удалите его.
 - Дополнительные серии PPO на CartPole (675 позиций, ядро переиспользуется):
@@ -98,13 +99,17 @@ PPO отдельно:
 python -m a2c_research.analyze --results results_search --study-plan configs/main_search_v1.json --out analysis_ppo
 ```
 
-Сравнение с A2C сокомандника. Его каталог содержит и PPO, а независимые копии одного запуска анализ
-**исключает обе** («Conflicting duplicate run identity»; проверено). Поэтому берите у него только A2C:
+Сравнение с A2C сокомандника. Готовые запуски A2C лежат в ветке `a2c` репозитория RATARETO/A2CvsPPO
+(каталог `results_search`, около 350 МБ); в самом A2C_RL готовых запусков нет. Клонируйте их **рядом** с проектом,
+не внутри. Его каталог содержит и PPO, а независимые копии одного запуска анализ **исключает обе**
+(«Conflicting duplicate run identity»; проверено), поэтому берите у него только A2C:
 ```
-python -m ppo_tools.subset --src ../A2C_RL/results_search --dst results_a2c_only --algos a2c --link
+git clone --depth 1 --branch a2c --single-branch https://github.com/RATARETO/A2CvsPPO.git ../A2CvsPPO
+python -m ppo_tools.subset --src ../A2CvsPPO --dst results_a2c_only --algos a2c --link
 python -m a2c_research.analyze --results results_search results_a2c_only --study-plan configs/main_search_v1.json --out analysis_compare
 ```
-Его результаты лежат в ветке `a2c` репозитория RATARETO/A2CvsPPO (каталог `results_search`).
+Путь `--src` считается от папки запуска команды (запускайте из корня проекта). `--link` при невозможности жёстких
+ссылок (другой диск) сам копирует файлы. Если `results_a2c_only` осталась от неудачной попытки, удалите её.
 Описание метрик и файлов: его `docs/METHODOLOGY.md` и `docs/RESULTS.md`.
 
 ## 4. Видео
@@ -118,14 +123,21 @@ python -m ppo_tools.render --compare random results_search/ppo/baseline/default/
 sampled и те же начальные состояния, что в итоговой оценке: return на кадре равен числу в `final_episodes.csv`.
 Результат — `videos/`.
 
-## 5. Проверки
+## 5. Структура проекта
 
-`python -m pytest` — 93 теста (78 ядра + 15 инструментов); `python -m ruff check src tests`.
+В корне должно быть: `configs/` (3 файла), `src/` (`a2c_research`, `ppo_tools`), `tests/`, `CORE_MANIFEST.json`,
+`README.md`, `pyproject.toml`, `requirements-frozen.txt`, `requirements-video.txt`; локально ещё `.venv/`,
+`results_search/`, `analysis_*/`, `videos/`. Всё лишнее (клон `A2C_RL`, `results_quick`) `doctor` перечислит в пункте
+«структура проекта». Окончания строк (CRLF после Git на Windows) `doctor` игнорирует: на протокол они не влияют.
+
+## 6. Проверки
+
+`python -m pytest` — 97 тестов (78 ядра + 19 инструментов; без видео-пакетов видео-тесты пропускаются);
+`python -m ruff check src tests`.
 
 ## Ограничения
 
-- Проверено на Linux с точно такими же версиями; на Windows не запускалось (ваши логи установки — первое такое
-  использование).
+- Проверено на Linux с точно такими же версиями; на Windows ядро и анализ у вас отработали (810 запусков PPO).
 - Подтверждающей фазы (seed 1000+) нет: её не определил и сокомандник.
 - Фиксированные бюджеты не доказывают полную сходимость и общее превосходство алгоритма.
 - Старый `stress_test` (эпизоды длиннее 500) не перенесён.
