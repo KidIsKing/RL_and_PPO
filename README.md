@@ -75,22 +75,37 @@ python -m a2c_research.study --plan configs/ppo_local_v1.json --workers 5
 
 ## 2. Запуск
 
-Все команды из корня проекта, внутри активированного `.venv`.
+Все команды из корня проекта, внутри активированного `.venv`. Порядок работы:
 
 ```
-python -m a2c_research.sweep --algo ppo --quick --workers 1            # проверка за минуты, НЕ для статьи
+# 0. Проверка окружения, ядра и структуры папок (все пункты должны быть OK)
+python -m ppo_tools.doctor
+
+# 1. Пробный запуск за минуты (НЕ для статьи); потом папку results_quick можно удалить
+python -m a2c_research.sweep --algo ppo --quick --workers 1
+
+# 2. Что будет запущено и что уже готово (в конце: Compatible completed / pending)
 python -m a2c_research.study --plan configs/main_search_v1.json --algos ppo --list
-python -m a2c_research.study --plan configs/main_search_v1.json --algos ppo --workers 5
+
+# 3. Основное ядро PPO: 810 запусков, 3 среды (≈ 38 CPU-часов, порядка 8 часов и больше при 5 процессах)
+python -m a2c_research.study --plan configs/main_search_v1.json --algos ppo --workers 5 2>&1 | tee run_main.log
+#    частями: --envs CartPole-v1   (или Acrobot-v1, Pendulum-v1);  --groups learning_rate;  --seeds 0 1
+
+# 4. Дополнительные серии CartPole (405 новых запусков, ядро переиспользуется), две части:
+#    4а. серии, у которых есть аналоги у A2C (165 запусков), нужны для сравнения
+python -m a2c_research.study --plan configs/ppo_cartpole_all_v1.json --groups gamma normalize_advantage vf_coef max_grad_norm net_arch activation n_envs grid_gamma_lambda --workers 5 2>&1 | tee run_extra_a.log
+#    4б. серии, специфичные для PPO, без аналогов у A2C (240 запусков)
+python -m a2c_research.study --plan configs/ppo_cartpole_all_v1.json --groups clip_range n_epochs batch_size grid_lr_clip grid_lr_epochs --workers 5 2>&1 | tee run_extra_b.log
+#    весь дополнительный план сразу: убрать --groups
+
+# 5. Резервная копия результатов (папка в .gitignore, Git её не хранит); положите архив на другой диск или в облако
+tar -czf results_search_backup_2026-11-08.tar.gz results_search analysis_ppo
 ```
 
-- Основное ядро PPO: 810 запусков. По логам сокомандника ≈ 38 CPU-часов (оценка); при 5 процессах порядка 8 часов
-  и больше. Можно частями: `--envs CartPole-v1`, `--groups learning_rate`, `--seeds 0 1`.
 - Прервали? Запустите ту же команду: завершённые запуски проверяются и пропускаются. Если остался файл `.running`
-  и процессов точно нет, удалите его.
-- Дополнительные серии PPO на CartPole (675 позиций, ядро переиспользуется):
-  `python -m a2c_research.study --plan configs/ppo_cartpole_all_v1.json --workers 5`
-  (только PPO-специфичные: добавьте `--groups clip_range n_epochs batch_size grid_lr_clip grid_lr_epochs`).
-  Эти серии у сокомандника объявлены, но не выполнены.
+  и процессов точно нет, удалите его. Отключите сон компьютера; один процесс оставьте свободным.
+- Дополнительные серии есть только для CartPole. Для Acrobot и Pendulum выполняется основное ядро (п. 3).
+- Эти серии у сокомандника объявлены (для PPO), но не выполнены.
 
 ## 3. Анализ
 
@@ -114,14 +129,31 @@ python -m a2c_research.analyze --results results_search results_a2c_only --study
 
 ## 4. Видео
 
+Видео пишется только для серий, у которых есть запуски; для остальных будет «ПРОПУСК ... нет модели»: это не ошибка,
+досчитайте серию (п. 4 раздела 2).
+
 ```
+# что будет записано (ничего не пишет)
 python -m ppo_tools.batch_videos --results results_search --env CartPole-v1 --list
+
+# все готовые серии CartPole, seed 0; потом только выбранные серии
 python -m ppo_tools.batch_videos --results results_search --env CartPole-v1 --seed 0
+python -m ppo_tools.batch_videos --results results_search --env CartPole-v1 --seed 0 --groups gamma vf_coef clip_range n_epochs
+
+# другие среды (там готовы только серии основного ядра)
+python -m ppo_tools.batch_videos --results results_search --env Acrobot-v1 --seed 0
+python -m ppo_tools.batch_videos --results results_search --env Pendulum-v1 --seed 0
+
+# четыре ступени вместо «мин | по умолчанию | макс»; детерминированная политика вместо sampled
+python -m ppo_tools.batch_videos --results results_search --env CartPole-v1 --groups learning_rate --mode ladder
+python -m ppo_tools.batch_videos --results results_search --env CartPole-v1 --greedy
+
+# одна модель, либо «до и после» (случайная политика и обученная)
+python -m ppo_tools.render --run results_search/ppo/baseline/default/seed_0
 python -m ppo_tools.render --compare random results_search/ppo/baseline/default/seed_0
 ```
-Серия: минимум | по умолчанию | максимум (`--mode ladder` — четыре ступени), сетка — четыре угла. По умолчанию
-sampled и те же начальные состояния, что в итоговой оценке: return на кадре равен числу в `final_episodes.csv`.
-Результат — `videos/`.
+Серия: минимум | по умолчанию | максимум, сетка — четыре угла. По умолчанию sampled и те же начальные состояния,
+что в итоговой оценке: return на кадре равен числу в `final_episodes.csv`. Результат — `videos/` (mp4 и gif).
 
 ## 5. Структура проекта
 
