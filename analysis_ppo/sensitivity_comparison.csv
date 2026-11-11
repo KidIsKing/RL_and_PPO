@@ -1,0 +1,13 @@
+stratum,group,status,reason
+0b83b77ef4d8,n_steps,descriptive_only,Both algorithms need one unambiguous family
+1d9701867e6c,gae_lambda,descriptive_only,Both algorithms need one unambiguous family
+3b7c1f0bc655,learning_rate,descriptive_only,Both algorithms need one unambiguous family
+46c883332e70,n_steps,descriptive_only,Both algorithms need one unambiguous family
+528cd56bd464,learning_rate,descriptive_only,Both algorithms need one unambiguous family
+54b390846069,ent_coef,descriptive_only,Both algorithms need one unambiguous family
+6d2baa3b3a7b,ent_coef,descriptive_only,Both algorithms need one unambiguous family
+75d7c16c6d57,gae_lambda,descriptive_only,Both algorithms need one unambiguous family
+7a227d806f1b,ent_coef,descriptive_only,Both algorithms need one unambiguous family
+a57347e01b49,learning_rate,descriptive_only,Both algorithms need one unambiguous family
+c4b9284c95fc,n_steps,descriptive_only,Both algorithms need one unambiguous family
+d17d87e0e55b,gae_lambda,descriptive_only,Both algorithms need one unambiguous family

@@ -11,8 +11,9 @@ __pycache__/
 .ruff_cache/
 build/
 dist/
-results*/
-analysis*/
+configs/
+results_a2c_only/
+results_search/
 .coverage
 htmlcov/
 videos/

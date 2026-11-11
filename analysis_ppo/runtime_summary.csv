@@ -1,0 +1,22 @@
+stratum,env_id,algo,group,n_runs,n_timed,mean_learn_elapsed_sec,min_learn_elapsed_sec,max_learn_elapsed_sec,note
+0b83b77ef4d8,Pendulum-v1,ppo,n_steps,20,20,297.72989254999993,293.93328839999594,303.434534,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+0f61e10066d0,Pendulum-v1,ppo,grid_lr_steps,80,80,298.9602396037502,295.29939829999785,305.64800749999995,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+1d9701867e6c,CartPole-v1,ppo,gae_lambda,25,25,158.8708425919997,150.6029364999995,168.69668420000016,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+3b7c1f0bc655,CartPole-v1,ppo,learning_rate,35,35,136.78999686857148,85.4750327999991,158.3032301000003,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+46c883332e70,CartPole-v1,ppo,n_steps,20,20,155.572621955,125.72077990000071,201.13115580000158,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+4c57320c7aa6,Pendulum-v1,ppo,grid_lr_entropy,80,80,297.2208888762498,274.6732073000021,301.2631231999985,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+528cd56bd464,Pendulum-v1,ppo,learning_rate,35,35,296.9022925571429,295.0092852999951,299.6551139000003,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+54b390846069,CartPole-v1,ppo,ent_coef,25,25,158.21882198399996,152.38404459999947,163.29478630000085,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+63dc7e5d2024,CartPole-v1,ppo,grid_lr_steps,80,80,144.28635244374988,115.81815799999822,166.24845579999965,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+6d2baa3b3a7b,Pendulum-v1,ppo,ent_coef,25,25,297.72415752400093,294.5704731000005,300.02820530000463,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+75d7c16c6d57,Acrobot-v1,ppo,gae_lambda,25,25,173.3773520759995,156.5041072999993,240.11339710000175,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+7a227d806f1b,Acrobot-v1,ppo,ent_coef,25,25,165.0085067559997,157.9069711000011,187.01890220000132,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+991d06f9edd7,Acrobot-v1,ppo,baseline,5,5,166.11603392000106,158.77416079999966,188.3033815000017,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+a57347e01b49,Acrobot-v1,ppo,learning_rate,35,35,170.1918185114289,156.66374609999912,218.88011310000002,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+aa52770b9cfd,Pendulum-v1,ppo,baseline,5,5,298.1348132999992,296.87668289999783,299.35705069999676,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+b8bb1d7d5f4a,CartPole-v1,ppo,grid_lr_entropy,80,80,130.60836992374985,110.35465839999961,144.6251123999973,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+c26d2e0a01ba,Acrobot-v1,ppo,grid_lr_steps,80,80,165.55764097874993,154.4471240999992,237.76794979999977,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+c4b9284c95fc,Acrobot-v1,ppo,n_steps,20,20,163.2344015949997,154.17196609999883,187.76156020000053,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+d17d87e0e55b,Pendulum-v1,ppo,gae_lambda,25,25,296.26156400799954,293.9528833000004,298.95447440000135,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+d7ef53bf9d4c,CartPole-v1,ppo,baseline,5,5,148.72596887999936,147.08665179999844,150.73793449999903,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
+e60e7896b986,Acrobot-v1,ppo,grid_lr_entropy,80,80,164.21961636375016,156.31075999999666,187.82888500000263,Includes periodic evaluation and CSV IO; concurrency affects elapsed time
